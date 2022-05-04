@@ -27,6 +27,8 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Run a one-line script
+        env:
+          AWS_EC2_METADATA_DISABLED: true
         run: |
           sudo curl -sSL -o /usr/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64 &&\
           sudo chmod +x /usr/bin/argocd
