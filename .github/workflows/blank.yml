@@ -31,4 +31,26 @@ jobs:
           sudo curl -sSL -o /usr/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64 &&\
           sudo chmod +x /usr/bin/argocd
           echo "y" | argocd login  ${{ secrets.ARGO_LINK }} --username ${{ secrets.ARGO_NAME }} --password ${{ secrets.ARGO_PASSWORD }} --grpc-web
-        
+          markets_match=(all nl fr)
+          string=$(git log -1 --pretty=format:%B | cat)
+          for i in "${markets_match[@]}"; do
+            if [[ $string == *"-$i-"* ]]; then
+              market=$i
+              service=$(echo $string | sed "s/.*$i-//")
+            fi
+          done
+          environment_match=(staging prod)
+          for e in "${environment_match[@]}"; do
+            if [[ $string == *"-$e-"* ]]; then
+              environment=$e
+            fi
+            aws s3 cp values/ s3://gwp-helm/values/ --recursive
+            if [ "$market" == "all" ]; then
+                all_markets=(nl fr)
+                for i in "${all_markets[@]}"; do
+                  argocd app get "$environment"-"$i"-"$service" --hard-refresh
+                done 
+            else
+                argocd app get "$environment"-"$market"-"$service" --hard-refresh
+            fi
+          done          
